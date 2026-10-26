@@ -1,0 +1,42 @@
+// Vraj — acesso restrito ao proprietário e validação dos documentos.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    function taskValid(d) {
+      return d.keys().hasAll(['title','category','done','createdAt','updatedAt'])
+        && d.keys().hasOnly(['title','category','done','createdAt','updatedAt'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 150
+        && d.category is string && d.category.size() > 0 && d.category.size() <= 60
+        && d.done is bool && d.createdAt is timestamp && d.updatedAt is timestamp;
+    }
+    match /usuarios/{uid}/tarefas/{id} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && taskValid(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if owner(uid) && taskValid(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+    }
+    match /usuarios/{uid}/sessoesFoco/{id} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid)
+        && request.resource.data.keys().hasAll(['subject','focus','rest','cycle','cyclesInTwoHours','focusedInTwoHours','createdAt'])
+        && request.resource.data.keys().hasOnly(['subject','focus','rest','cycle','cyclesInTwoHours','focusedInTwoHours','createdAt'])
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0 && request.resource.data.subject.size() <= 150
+        && request.resource.data.focus is number && request.resource.data.focus > 0
+        && request.resource.data.rest is number && request.resource.data.rest >= 0
+        && request.resource.data.cycle is number
+        && request.resource.data.cycle == request.resource.data.focus + request.resource.data.rest
+        && request.resource.data.cycle <= 120
+        && request.resource.data.cyclesInTwoHours is int
+        && request.resource.data.cyclesInTwoHours == math.floor(120 / request.resource.data.cycle)
+        && request.resource.data.focusedInTwoHours is number
+        && request.resource.data.focusedInTwoHours == request.resource.data.cyclesInTwoHours * request.resource.data.focus
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "StudyFlow PAM",
+    "slug": "studyflow-pam",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F5F3FF"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#6D28D9"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}
